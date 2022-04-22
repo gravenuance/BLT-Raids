@@ -389,10 +389,19 @@ f:SetScript("OnUpdate", function(_, elapsed)
     BLT:UpdateUI()
 end)
 
+local function ShouldShow()
+    local inParty = UnitInParty("player")
+    local inRaid = UnitInRaid("player")
+
+    return (db.party and inParty) or
+    (db.raid and inRaid) or
+    (db.solo and not inParty and not inRaid)
+end
+
 local function HandleEvent(_, event, ...)
     -- If addon is disabled don't process any events
     if not db.enable then return end
-    if (UnitInRaid("player") == nil) then return end
+    if not ShouldShow() then return end
     -- Check if we received a combat log event
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         -- Get the variables needed from the event
@@ -1485,13 +1494,7 @@ function BLT:SetOptions()
 end
 
 function BLT:UpdateVisible()
-    local inParty = GetNumPartyMembers() > 0
-    local inRaid = GetNumRaidMembers() > 0
-    -- Check for pet|party|raid|alone
-    local show = (db.party and inParty) or
-            (db.raid and inRaid) or
-            (db.solo and not inParty and not inRaid)
-
+    local show = ShouldShow()
     -- Then hide override if necessary for resting|pvp
     local _, instanceType = IsInInstance()
     if (db.resting and IsResting()) or (db.pvp and (instanceType == "pvp" or instanceType == "arena")) then
@@ -1501,7 +1504,7 @@ function BLT:UpdateVisible()
         show = true
     end
 
-    if db.enable and show and (UnitInRaid("player") ~= nil) then
+    if db.enable and show then
         mainFrame:Show()
         mainFrame.isSetToHidden = false
     else
