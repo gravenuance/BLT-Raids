@@ -514,39 +514,6 @@ local function HandleEvent(_, event, ...)
             return
         end
 
-    elseif event == "CHAT_MSG_ADDON" then
-        local prefix, msg = ...
-        if prefix ~= "BLT" then return end
-        local arg1, arg2 = strsplit(":", msg)
-        if arg1 == "CD" then
-            local source, name, id, destination, isItem = strsplit(";", arg2)
-            local iconFound = false
-            for i=1, #icon_Frames do
-                local frame = icon_Frames[i]
-                if frame.name == name then
-                    iconFound = true
-                    break
-                end
-            end
-            if iconFound then
-                local cooldownFound = false
-                for i=1, #cooldown_Frames do
-                    local frame = cooldown_Frames[i]
-                    if frame.name == name and frame.player == source then
-                        cooldownFound = true
-                        break
-                    end
-                end
-                if not cooldownFound then
-                    if isItem == "true" and BLT:IsCooldownItemEnabled(name) then
-                        BLT:CreateCooldownFrame(source, name, id, destination, true)
-                    elseif BLT:IsCooldownSpellEnabled(name) then
-                        BLT:CreateCooldownFrame(source, name, id, destination)
-                    end
-                end
-            end
-        end
-
     elseif event == "PLAYER_ENTERING_WORLD" then
         local inInstance, instanceType = IsInInstance()
         -- Reset cooldowns upon entering an arena match
@@ -591,7 +558,6 @@ function BLT:DelayRebirthTimer(spellName, spellId, sourceName, time)
             if frame.name == spellName then
                 if frame.time + 60 >= time then
                     BLT:CreateCooldownFrame(sourceName, spellName, spellId, frame.target)
-                    SendAddonMessage("BLT", "CD:"..sourceName..";"..spellName..";"..spellId..";"..(frame.target or ""), BLT:GetGroupState(), UnitName("player"))
                 end
             end
         end
@@ -611,7 +577,6 @@ function BLT:GenerateCooldown(sourceName, destName, spellName, spellId)
                             destName = nil
                         end
                         BLT:CreateCooldownFrame(sourceName, spellName, spellId, destName)
-                        SendAddonMessage("BLT", "CD:"..sourceName..";"..spellName..";"..spellId..";"..(destName or ""), BLT:GetGroupState(), UnitName("player"))
                         break
                     end
                 end
@@ -620,7 +585,6 @@ function BLT:GenerateCooldown(sourceName, destName, spellName, spellId)
                 if trackItemSpellIDs[i] == spellId or trackItemSpellIDsHC[i] == spellId then
                     if BLT:IsPlayerValidForItemCooldown(sourceName, i) and BLT:IsCooldownItemEnabled(trackItems[i]) then
                         BLT:CreateCooldownFrame(sourceName, trackItems[i], trackItemIDs[i], nil, true)
-                        SendAddonMessage("BLT", "CD:"..sourceName..";"..trackItems[i]..";"..trackItemIDs[i]..";;"..tostring(true), BLT:GetGroupState(), UnitName("player"))
                         break
                     end
                 end
@@ -760,7 +724,6 @@ function BLT:CreateMainFrame()
     mainFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     mainFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     mainFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    mainFrame:RegisterEvent("CHAT_MSG_ADDON")
     mainFrame:SetScript("OnEvent", HandleEvent)
 end
 
@@ -1215,7 +1178,7 @@ function BLT:UpdateIconFrame(index)
                     SendChatMessage(L["%s is ready to be used by %s"]:format(contains(trackCooldownSpellIDs, frame.id) and self:Spell(frame.id, true) or self:Item(frame.id, true), next(players) and tconcat(players, ", ") or "—"), BLT:GetGroupState())
                 else
                     self:Print(L["%s is ready to be used by %s"]:format(contains(trackCooldownSpellIDs, frame.id) and self:Spell(frame.id or self:Item(frame.id)), next(players) and tconcat(players, ", ") or "—"))
-                    SendCharMessage(("%s"):format(), BLT:GetGroupState())
+                    --SendCharMessage(("%s"):format(), BLT:GetGroupState())
                 end
             end
         end)

@@ -113,40 +113,7 @@ local function HandleEvent(_, event, ...)
     -- Check if the player has entered the world or we reloaded the UI
     if event == "PLAYER_ENTERING_WORLD" or event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" or event == "ACTIVE_TALENT_GROUP_CHANGED" then
         clearList(inspectedUnits)
-    elseif event == "CHAT_MSG_ADDON" then
-        local prefix, msg, _, sender = ...
-        if prefix ~= "BLT" then return end
-        local arg1, arg2 = strsplit(":", msg)
-        if arg1 == "Glyphs" then
-            BLT.playerGlyphs[sender] = arg2
-        elseif arg1 == "Request-Version" then
-            SendAddonMessage("BLT", "Version:"..sub(BLT.version, 5), "WHISPER", sender)
-        elseif arg1 == "Version" then
-            addonUsers[sender] = arg2
-            BLT:ScheduleTimer("ReportUserTimer", 0.5)
-        end
     end
-end
-
-function BLT:ReportUserTimer()
-    local users = {}
-    local newUser
-    local newVersion
-    local myVersion = sub(self.version, 5)
-    for user,version in pairs(addonUsers) do
-        if version > myVersion then
-            if version > newVersion then
-                newUser, newVersion = user, version
-            end
-            tinsert(users, format("%s (|r|cFF00FF00%s|r|cFFBEBEBE)", self:Unit(user),version))
-        else
-            tinsert(users, format("%s (%s)", self:Unit(user),version))
-        end
-    end
-    if next(users) ~= nil then
-        self:Print(L["Online raid members using the addon: %s"]:format(tconcat(users, ", ")))
-    end
-    twipe(addonUsers)
 end
 
 function BLT:Update()
@@ -283,7 +250,6 @@ function BLT:CheckGlyphInformation()
             tinsert(glyphs, name)
         end
     end
-    SendAddonMessage("BLT", "Glyphs:"..tconcat(glyphs, ", "), self:GetGroupState(), selfPlayerName)
 end
 
 function BLT:GetGroupState()
@@ -305,7 +271,6 @@ function BLT:CreateBackendFrame()
     mainFrame:RegisterEvent("RAID_ROSTER_UPDATE")
     mainFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
     mainFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
-    mainFrame:RegisterEvent("CHAT_MSG_ADDON")
     mainFrame:SetScript("OnEvent", HandleEvent)
     TalentQuery.RegisterCallback(self, "TalentQuery_Ready")
     selfPlayerName = UnitName("player")
